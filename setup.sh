@@ -63,6 +63,7 @@ function change_umask {
 
 # Change PAM to harden auth through apps
 function change_pam {
+    echo "|--- Change PAM ---|"
     printf '#%PAM-1.0\n
     # This file is auto-generated.\n
     # User changes will be destroyed the next time authconfig is run.\n
@@ -85,6 +86,7 @@ function change_pam {
     session     required      pam_limits.so\n
     session     [success=1 default=ignore] pam_succeed_if.so service in crond quiet use_uid\n
     session     required      pam_unix.si\n' > /etc/pam.d/system-auth
+    echo "--> done"
 }
 
 # kick inactive users after 20 minutes
