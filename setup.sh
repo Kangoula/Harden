@@ -1,35 +1,43 @@
 #!/bin/bash
 
+# simple function to display the date in a file
+function display_date()
+{
+    echo "--------------------------------------" >> $1
+    date >> $1
+    echo "--------------------------------------" >> $1
+}
+
 # List all installed packages
-function installed {
+function installed()
+{
     echo "|--- Installed packages ---|"
-    echo "----------------------------------------------" >> /var/log/installed_packages.log
-    date >> /var/log/installed_packages.log
-    echo "----------------------------------------------" >> /var/log/installed_packages.log
+    display_date /var/log/installed_packages.log
     yum list installed >> /var/log/installed_packages.log
     echo "--> done"
    
 }
 
 # Update system
-function update {
+function update()
+{
     echo "|--- Updating system ---|"
-    echo "----------------------------------------------" >> /var/log/periodic_updates.log
-    date >> /var/log/periodic_updates.log
-    echo "----------------------------------------------" >> /var/log/periodic_updates.log
+    display_date /var/log/periodic_updates.log
     yum update -y >> /var/log/periodic updates.log
     echo "--> system updated"
 }
 
 # Disable USB mass storage
-function disable_usb {
+function disable_usb()
+{
     echo "|--- Disabling usb ---|"
     echo "blacklist usb-storage" > /etc/modprobe.d/blacklist-usbstorage
     echo "--> usb disabled"
 }
 
 # Restrict root functions
-function restrict_root {
+function restrict_root()
+{
     echo "|--- Restrict root ---|"
     # can't login directly as root user, must use su or sudo now
     echi "tty1" > /etc/securetty
@@ -40,7 +48,8 @@ function restrict_root {
 }
 
 # Harden password policies
-function password_policies {
+function password_policies()
+{
     echo "|--- Update password policies ---|"
     echo "Passwords expire every 90 days"
     perl -npe 's/PASS_MAX_DAYS\s+99999/PASS_MAX_DAYS 90/' -i /etc/login.defs
@@ -54,7 +63,8 @@ function password_policies {
 }
 
 # Change umask to 077
-function change_umask {
+function change_umask()
+{
     echo "|--- Change umask ---|"
     perl -npe 's/umask\s+0\d2/umask 077/g' -i /etc/bashrc
     perl -npe 's/umask\s+0\d2/umask 077/g' -i /etc/csh.cshrc
@@ -62,7 +72,8 @@ function change_umask {
 }
 
 # Change PAM to harden auth through apps
-function change_pam {
+function change_pam()
+{
     echo "|--- Change PAM ---|"
     printf '#%PAM-1.0\n
     # This file is auto-generated.\n
@@ -90,7 +101,8 @@ function change_pam {
 }
 
 # kick inactive users after 20 minutes
-function kick_off {
+function kick_off()
+{
     echo "|--- Kick inactive users after 20 min. ---|"
     echo "readonly TMOUT=1200" >> /etc/profile.d/os-security.sh
     echo "readonly HISTFILE" >> /etc/profile.d/os-security.sh
@@ -99,7 +111,8 @@ function kick_off {
 }
 
 # Restrict the use of cron and at to root user
-function restrict_cron_at {
+function restrict_cron_at()
+{
     echo "|--- Restrict cron and at ---|"
     echo "Lock cron"
     touch /etc/cron.allow
@@ -113,4 +126,39 @@ function restrict_cron_at {
     echo "to allow users to do cron jobs, add then to /etc/cron.allow"
 }
 
+# list files and directories with suid, sgid and sticky bit
+function list_permissions()
+{
+    # setuid allow to use files as root but logged as normal user
+    # list setuid files
+    echo "|--- Listing setuid files ---|"
+    display_date /var/log/suid.log
+    find / -perm -1000 >> /var/log/suid.log
+    # setgid is the same as stuid but for groups
+    # list setgid files
+    echo "|--- Listing setgid files ---|"
+    display_date /var/log/sgid.log
+    find / -perm -4000 >> /var/log/sgid.log
+    # sticky bit : if there is a sticky bit on a runnable file, the file will stay in memory
+    # if sticky bit is positioned on a directory it can secure write access to this directory
+    # example : /tmp where everyone can write but we do't wan't other users to access our files.
+    echo "|--- Listing sticky bit ---|"
+    display_date /var/log/stickybit.log
+    find / -perm -1000 >> /var/log/stickybit.log
+    echo "--> done"
+
+}
+
+# List files others can use
+function find_other_perm()
+{
+    echo "|--- Find Permissions to Others ---|"
+    display_date /var/log/other_permissions.log
+    find / -perm -o=rwx >> /var/log/other_permissions.log
+    echo "--> done"
+}
+
+#TODO Capabilities
+#TODO DAC, MAC, RBAC ??
+#TODO SELINUX
 
