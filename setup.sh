@@ -65,3 +65,29 @@ function change_umask {
 function change_pam {
     
 }
+
+# kick inactive users after 20 minutes
+function kick_off {
+    echo "|--- Kick inactive users after 20 min. ---|"
+    echo "readonly TMOUT=1200" >> /etc/profile.d/os-security.sh
+    echo "readonly HISTFILE" >> /etc/profile.d/os-security.sh
+    chmod +x /etc/profile.d/os-security.sh
+    echo "--> property added"
+}
+
+# Restrict the use of cron and at to root user
+function restrict_cron_at {
+    echo "|--- Restrict cron and at ---|"
+    echo "Lock cron"
+    touch /etc/cron.allow
+    chmod 600 /etc/cron.allow
+    awk -F: '{print $1}' /etc/passwd | grep -v root > /etc/cron.deny
+    echo "Lock AT"
+    touch /etc/at.allow
+    chmod 600 /etc/at.allow
+    awk -F: '{print $1}' /etc/passwd | grep -v root > /etc/at.deny
+    echo "--> done"
+    echo "to allow users to do cron jobs, add then to /etc/cron.allow"
+}
+
+
