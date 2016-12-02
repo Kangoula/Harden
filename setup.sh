@@ -5,6 +5,7 @@ function installed {
     echo "|--- Installed packages ---|"
     echo "----------------------------------------------" >> /var/log/installed_packages.log
     date >> /var/log/installed_packages.log
+    echo "----------------------------------------------" >> /var/log/installed_packages.log
     yum list installed >> /var/log/installed_packages.log
     echo "--> done"
    
@@ -15,14 +16,9 @@ function update {
     echo "|--- Updating system ---|"
     echo "----------------------------------------------" >> /var/log/periodic_updates.log
     date >> /var/log/periodic_updates.log
+    echo "----------------------------------------------" >> /var/log/periodic_updates.log
     yum update -y >> /var/log/periodic updates.log
     echo "--> system updated"
-}
-
-# Add password to BIOS
-function secure_bios {
-    echo "|--- Add password to BIOS ---|"
-    
 }
 
 # Disable USB mass storage
@@ -43,4 +39,29 @@ function restrict_root {
     echo "to perform actions as root, login as root with su, or use sudo"
 }
 
+# Harden password policies
+function password_policies {
+    echo "|--- Update password policies ---|"
+    echo "Passwords expire every 90 days"
+    perl -npe 's/PASS_MAX_DAYS\s+99999/PASS_MAX_DAYS 90/' -i /etc/login.defs
+    echo "Passwords can be changed twice a day"
+    perl -npe 's/PASS_MIN_DAYS\s+0/PASS_MIN_DAYS 2/g' -i /etc/login.defs
+    echo "Passwords minimal length is now 8"
+    perl -npe 's/PASS_MIN_LEN\s+0/PASS_MIN_LEN 8/g' -i /etc/login.defsi
+    echo "Changing password encryption type to sha512"
+    authconfig --passalgo=sha512 --update
+    echo "--> done"
+}
 
+# Change umask to 077
+function change_umask {
+    echo "|--- Change umask ---|"
+    perl -npe 's/umask\s+0\d2/umask 077/g' -i /etc/bashrc
+    perl -npe 's/umask\s+0\d2/umask 077/g' -i /etc/csh.cshrc
+    echo "--> done"
+}
+
+# Change PAM to harden auth through apps
+function change_pam {
+    
+}
