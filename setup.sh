@@ -178,7 +178,7 @@ function check_selinux()
     echo "--> done"
 }
 
-function randrom_ssh_port()
+function random_ssh_port()
 {
     # randomize port between 9000 and 50000
     random_port=$((9000 + RANDOM % 50000))
