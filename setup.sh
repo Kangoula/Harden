@@ -31,7 +31,7 @@ update()
 {
     echo " Updating system"
     display_date /var/log/periodic_updates.log
-    yum update -y >> /var/log/periodic updates.log
+    yum update -y >> /var/log/periodic_updates.log
     echo "--> done"
 }
 
