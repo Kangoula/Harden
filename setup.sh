@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # simple function to display the date in a file
-function display_date()
+display_date()
 {
     echo "--------------------------------------" >> $1
     date +%Y%m%d-%H:%M >> $1
@@ -9,7 +9,7 @@ function display_date()
 }
 
 # List all installed packages
-function installed()
+installed()
 {
     echo " Installed packages"
     display_date /var/log/installed_packages.log
@@ -18,7 +18,7 @@ function installed()
    
 }
 
-function repo_list()
+repo_list()
 {
     echo " Repositories List"
     display_date /var/log/repo_list.log
@@ -27,7 +27,7 @@ function repo_list()
 }
 
 # Update system
-function update()
+update()
 {
     echo " Updating system"
     display_date /var/log/periodic_updates.log
@@ -36,7 +36,7 @@ function update()
 }
 
 # Disable USB mass storage
-function disable_usb()
+disable_usb()
 {
     echo " Disabling usb"
     echo "blacklist usb-storage" > /etc/modprobe.d/blacklist-usbstorage
@@ -44,14 +44,13 @@ function disable_usb()
 }
 
 # Restrict root functions
-function restrict_root()
+restrict_root()
 {
     echo "Restrict root"
     # can't login directly as root user, must use su or sudo now
-    echo "tty1" > /etc/securetty
     # disable ssh root login
     echo "Disable Root SSH Login"
-    perl -npe 's/#PermitRootLogin no/PermitRootLogin no/g' -i /etc/ssh/sshd_config
+     's/#PermitRootLogin no/PermitRootLogin no/g' /etc/ssh/sshd_config
     # restrict /root directory to root user
     chmod 700 /root
     echo "--> done"
@@ -59,31 +58,31 @@ function restrict_root()
 }
 
 # Harden password policies
-function password_policies()
+password_policies()
 {
     echo "Update password policies"
     echo "Passwords expire every 90 days"
-    perl -npe 's/PASS_MAX_DAYS\s+99999/PASS_MAX_DAYS 90/' -i /etc/login.defs
+    sed -i 's/PASS_MAX_DAYS\s+99999/PASS_MAX_DAYS 90/' /etc/login.defs
     echo "Passwords can be changed twice a day"
-    perl -npe 's/PASS_MIN_DAYS\s+0/PASS_MIN_DAYS 2/g' -i /etc/login.defs
+    sed -i 's/PASS_MIN_DAYS\s+0/PASS_MIN_DAYS 2/g' /etc/login.defs
     echo "Passwords minimal length is now 8"
-    perl -npe 's/PASS_MIN_LEN\s+0/PASS_MIN_LEN 8/g' -i /etc/login.defs
+    sed -i 's/PASS_MIN_LEN\s+0/PASS_MIN_LEN 8/g' /etc/login.defs
     echo "Changing password encryption type to sha512"
     authconfig --passalgo=sha512 --update
     echo "--> done"
 }
 
 # Change umask to 077
-function change_umask()
+change_umask()
 {
     echo "Change umask"
-    perl -npe 's/umask\s+0\d2/umask 077/g' -i /etc/bashrc
-    perl -npe 's/umask\s+0\d2/umask 077/g' -i /etc/csh.cshrc
+    sed -i 's/umask\s+0\d2/umask 077/g' /etc/bashrc
+    sed -i 's/umask\s+0\d2/umask 077/g' /etc/csh.cshrc
     echo "--> done"
 }
 
 # Change PAM to harden auth through apps
-function change_pam()
+change_pam()
 {
     echo "Change PAM"
     echo -e '#%PAM-1.0
@@ -112,7 +111,7 @@ session     required      pam_unix.si' > /etc/pam.d/system-auth
 }
 
 # kick inactive users after 20 minutes
-function kick_off()
+kick_off()
 {
     echo "Kick inactive users after 20 min."
     echo "readonly TMOUT=1200">> /etc/profile.d/os-security.sh
@@ -122,7 +121,7 @@ function kick_off()
 }
 
 # Restrict the use of cron and at to root user
-function restrict_cron_at()
+restrict_cron_at()
 {
     echo "Restrict cron and at"
     echo "Lock cron"
@@ -138,7 +137,7 @@ function restrict_cron_at()
 }
  
 # list files and directories with suid, sgid and sticky bit
-function list_permissions()
+list_permissions()
 {
     # setuid allow to use files as root but logged as normal user
     # list setuid files
@@ -161,7 +160,7 @@ function list_permissions()
 }
 
 # List files others can use
-function find_other_perm()
+find_other_perm()
 {
     echo "Find Permissions to Others"
     display_date /var/log/other_permissions.log
@@ -170,7 +169,7 @@ function find_other_perm()
 }
 
 # check selinux status
-function check_selinux()
+check_selinux()
 {
     echo "Check SELinux"
     display_date /var/log/selinux_status.log
@@ -178,7 +177,7 @@ function check_selinux()
     echo "--> done"
 }
 
-function random_ssh_port()
+random_ssh_port()
 {
     # randomize port between 9000 and 50000
     random_port=$((9000 + RANDOM % 50000))
@@ -191,7 +190,7 @@ function random_ssh_port()
 }
 
 
-function main()
+main()
 {
     if [ "$(id -u)" != "0" ]; then
         echo "This script must be run as root" 1>&2
@@ -276,4 +275,4 @@ function main()
     fi
 }
 
-main
+main $@
