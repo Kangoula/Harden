@@ -11,7 +11,7 @@ function display_date()
 # List all installed packages
 function installed()
 {
-    echo "|--- Installed packages ---|"
+    echo " Installed packages"
     display_date /var/log/installed_packages.log
     yum list installed >> /var/log/installed_packages.log
     echo "--> done"
@@ -20,7 +20,7 @@ function installed()
 
 function repo_list()
 {
-    echo "|--- Repositories List ---|"
+    echo " Repositories List"
     display_date /var/log/repo_list.log
     yum repolist >> /var/log/repo_list.org
     echo "--> done"
@@ -29,39 +29,39 @@ function repo_list()
 # Update system
 function update()
 {
-    echo "|--- Updating system ---|"
+    echo " Updating system"
     display_date /var/log/periodic_updates.log
     yum update -y >> /var/log/periodic updates.log
-    echo "--> system updated"
+    echo "--> done"
 }
 
 # Disable USB mass storage
 function disable_usb()
 {
-    echo "|--- Disabling usb ---|"
+    echo " Disabling usb"
     echo "blacklist usb-storage" > /etc/modprobe.d/blacklist-usbstorage
-    echo "--> usb disabled"
+    echo "--> done"
 }
 
 # Restrict root functions
 function restrict_root()
 {
-    echo "|--- Restrict root ---|"
+    echo "Restrict root"
     # can't login directly as root user, must use su or sudo now
     echo "tty1" > /etc/securetty
     # disable ssh root login
-    echo "|--- Disable Root SSH Login ---|"
+    echo "Disable Root SSH Login"
     perl -npe 's/#PermitRootLogin no/PermitRootLogin no/g' -i /etc/ssh/sshd_config
     # restrict /root directory to root user
     chmod 700 /root
-    echo "--> Root restricted"
+    echo "--> done"
     echo "to perform actions as root, login as root with su, or use sudo"
 }
 
 # Harden password policies
 function password_policies()
 {
-    echo "|--- Update password policies ---|"
+    echo "Update password policies"
     echo "Passwords expire every 90 days"
     perl -npe 's/PASS_MAX_DAYS\s+99999/PASS_MAX_DAYS 90/' -i /etc/login.defs
     echo "Passwords can be changed twice a day"
@@ -76,7 +76,7 @@ function password_policies()
 # Change umask to 077
 function change_umask()
 {
-    echo "|--- Change umask ---|"
+    echo "Change umask"
     perl -npe 's/umask\s+0\d2/umask 077/g' -i /etc/bashrc
     perl -npe 's/umask\s+0\d2/umask 077/g' -i /etc/csh.cshrc
     echo "--> done"
@@ -85,7 +85,7 @@ function change_umask()
 # Change PAM to harden auth through apps
 function change_pam()
 {
-    echo "|--- Change PAM ---|"
+    echo "Change PAM"
     echo -e '#%PAM-1.0
 # This file is auto-generated.
 # User changes will be destroyed the next time authconfig is run.
@@ -114,17 +114,17 @@ session     required      pam_unix.si' > /etc/pam.d/system-auth
 # kick inactive users after 20 minutes
 function kick_off()
 {
-    echo "|--- Kick inactive users after 20 min. ---|"
-    echo "readonly TMOUT=1200" >> /etc/profile.d/os-security.sh
+    echo "Kick inactive users after 20 min."
+    echo "readonly TMOUT=1200">> /etc/profile.d/os-security.sh
     echo "readonly HISTFILE" >> /etc/profile.d/os-security.sh
     chmod +x /etc/profile.d/os-security.sh
-    echo "--> property added"
+    echo "--> done"
 }
 
 # Restrict the use of cron and at to root user
 function restrict_cron_at()
 {
-    echo "|--- Restrict cron and at ---|"
+    echo "Restrict cron and at"
     echo "Lock cron"
     touch /etc/cron.allow
     chmod 600 /etc/cron.allow
@@ -142,18 +142,18 @@ function list_permissions()
 {
     # setuid allow to use files as root but logged as normal user
     # list setuid files
-    echo "|--- Listing setuid files ---|"
+    echo "Listing setuid files"
     display_date /var/log/suid.log
     find / -perm -4000 >> /var/log/suid.log
     # setgid is the same as stuid but for groups
     # list setgid files
-    echo "|--- Listing setgid files ---|"
+    echo "Listing setgid files"
     display_date /var/log/sgid.log
     find / -perm -2000 >> /var/log/sgid.log
     # sticky bit : if there is a sticky bit on a runnable file, the file will stay in memory
     # if sticky bit is positioned on a directory it can secure write access to this directory
     # example : /tmp where everyone can write but we do't wan't other users to access our files.
-    echo "|--- Listing sticky bit ---|"
+    echo "Listing sticky bit"
     display_date /var/log/stickybit.log
     find / -perm -1000 >> /var/log/stickybit.log
     echo "--> done"
@@ -163,7 +163,7 @@ function list_permissions()
 # List files others can use
 function find_other_perm()
 {
-    echo "|--- Find Permissions to Others ---|"
+    echo "Find Permissions to Others"
     display_date /var/log/other_permissions.log
     find / -perm -o=rwx >> /var/log/other_permissions.log
     echo "--> done"
@@ -172,7 +172,7 @@ function find_other_perm()
 # check selinux status
 function check_selinux()
 {
-    echo "|--- Check SELinux ---|"
+    echo "Check SELinux"
     display_date /var/log/selinux_status.log
     sestatus >> /var/log/selinux_status.log
     echo "--> done"
@@ -199,6 +199,7 @@ function main()
     fi
 
     if [[ $# = 0 ]]; then
+        echo "no args provided, using default config"
         # launching functions
         installed
         repo_list
@@ -214,7 +215,6 @@ function main()
         find_other_perm
         check_selinux
         random_ssh_port
-        exit 1
     else
         # handle command line args
         key="$1"
