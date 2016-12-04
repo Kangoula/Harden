@@ -40,7 +40,9 @@ function restrict_root()
 {
     echo "|--- Restrict root ---|"
     # can't login directly as root user, must use su or sudo now
-    echi "tty1" > /etc/securetty
+    echo "tty1" > /etc/securetty
+    # disable ssh root login
+    perl -npe 's/#PermitRootLogin no/PermitRootLogin no/g' -i /etc/ssh/sshd_config
     # restrict /root directory to root user
     chmod 700 /root
     echo "--> Root restricted"
@@ -56,7 +58,7 @@ function password_policies()
     echo "Passwords can be changed twice a day"
     perl -npe 's/PASS_MIN_DAYS\s+0/PASS_MIN_DAYS 2/g' -i /etc/login.defs
     echo "Passwords minimal length is now 8"
-    perl -npe 's/PASS_MIN_LEN\s+0/PASS_MIN_LEN 8/g' -i /etc/login.defsi
+    perl -npe 's/PASS_MIN_LEN\s+0/PASS_MIN_LEN 8/g' -i /etc/login.defs
     echo "Changing password encryption type to sha512"
     authconfig --passalgo=sha512 --update
     echo "--> done"
@@ -75,28 +77,28 @@ function change_umask()
 function change_pam()
 {
     echo "|--- Change PAM ---|"
-    printf '#%PAM-1.0\n
-    # This file is auto-generated.\n
-    # User changes will be destroyed the next time authconfig is run.\n
-    auth        required      pam_env.so\n
-    auth        sufficient    pam_unix.so nullok try_first_pass\n
-    auth        requisite     pam_succeed_if.so uid >= 500 quiet\n
-    auth        required      pam_deny.so\n
-    auth        required      pam_tally2.so deny=3 onerr=fail unlock_time=60\n
-    
-    account     required      pam_unix.so\n
-    account     sufficient    pam_succeed_if.so uid < 500 quiet\n
-    account     required      pam_permit.so\n
-    account     required      pam_tally2.so per_user\n
-    
-    password    requisite     pam_cracklib.so try_first_pass retry=3 minlen=9 lcredit=-2 ucredit=-2 dcredit=-2 ocredit=-2\n
-    password    sufficient    pam_unix.so sha512 shadow nullok try_first_pass use_authtok remember=10\n
-    password    required      pam_deny.so\n
-    
-    session     optional      pam_keyinit.so revoke\n
-    session     required      pam_limits.so\n
-    session     [success=1 default=ignore] pam_succeed_if.so service in crond quiet use_uid\n
-    session     required      pam_unix.si\n' > /etc/pam.d/system-auth
+    echo -e '#%PAM-1.0
+# This file is auto-generated.
+# User changes will be destroyed the next time authconfig is run.
+auth        required      pam_env.so
+auth        sufficient    pam_unix.so nullok try_first_pass
+auth        requisite     pam_succeed_if.so uid >= 500 quiet
+auth        required      pam_deny.so
+auth        required      pam_tally2.so deny=3 onerr=fail unlock_time=60
+
+account     required      pam_unix.so
+account     sufficient    pam_succeed_if.so uid < 500 quiet
+account     required      pam_permit.so
+account     required      pam_tally2.so per_user
+
+password    requisite     pam_cracklib.so try_first_pass retry=3 minlen=9 lcredit=-2 ucredit=-2 dcredit=-2 ocredit=-2
+password    sufficient    pam_unix.so sha512 shadow nullok try_first_pass use_authtok remember=10
+password    required      pam_deny.so
+
+session     optional      pam_keyinit.so revoke
+session     required      pam_limits.so
+session     [success=1 default=ignore] pam_succeed_if.so service in crond quiet use_uid
+session     required      pam_unix.si' > /etc/pam.d/system-auth
     echo "--> done"
 }
 
@@ -125,7 +127,7 @@ function restrict_cron_at()
     echo "--> done"
     echo "to allow users to do cron jobs, add then to /etc/cron.allow"
 }
-
+ 
 # list files and directories with suid, sgid and sticky bit
 function list_permissions()
 {
@@ -133,12 +135,12 @@ function list_permissions()
     # list setuid files
     echo "|--- Listing setuid files ---|"
     display_date /var/log/suid.log
-    find / -perm -1000 >> /var/log/suid.log
+    find / -perm -4000 >> /var/log/suid.log
     # setgid is the same as stuid but for groups
     # list setgid files
     echo "|--- Listing setgid files ---|"
     display_date /var/log/sgid.log
-    find / -perm -4000 >> /var/log/sgid.log
+    find / -perm -2000 >> /var/log/sgid.log
     # sticky bit : if there is a sticky bit on a runnable file, the file will stay in memory
     # if sticky bit is positioned on a directory it can secure write access to this directory
     # example : /tmp where everyone can write but we do't wan't other users to access our files.
@@ -162,3 +164,8 @@ function find_other_perm()
 #TODO DAC, MAC, RBAC ??
 #TODO SELINUX
 
+#TODO faire des diffs avec les fichiers de log déjà présents pour voir ce qui a changé et enregistrer seulement ces diffs dans les fichiers de log
+
+#TODO Installer ufw
+#TODO changer le port ssh
+#TODO vérifier que seul root puisse lancer le script
