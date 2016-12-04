@@ -4,7 +4,7 @@
 function display_date()
 {
     echo "--------------------------------------" >> $1
-    date >> $1
+    date +%Y%m%d-%H:%M >> $1
     echo "--------------------------------------" >> $1
 }
 
@@ -16,6 +16,14 @@ function installed()
     yum list installed >> /var/log/installed_packages.log
     echo "--> done"
    
+}
+
+function repo_list()
+{
+    echo "|--- Repositories List ---|"
+    display_date /var/log/repo_list.log
+    yum repolist >> /var/log/repo_list.org
+    echo "--> done"
 }
 
 # Update system
@@ -42,6 +50,7 @@ function restrict_root()
     # can't login directly as root user, must use su or sudo now
     echo "tty1" > /etc/securetty
     # disable ssh root login
+    echo "|--- Disable Root SSH Login ---|"
     perl -npe 's/#PermitRootLogin no/PermitRootLogin no/g' -i /etc/ssh/sshd_config
     # restrict /root directory to root user
     chmod 700 /root
@@ -160,12 +169,113 @@ function find_other_perm()
     echo "--> done"
 }
 
-#TODO Capabilities
-#TODO DAC, MAC, RBAC ??
-#TODO SELINUX
+# check selinux status
+function check_selinux()
+{
+    echo "|--- Check SELinux ---|"
+    display_date /var/log/selinux_status.log
+    sestatus >> /var/log/selinux_status.log
+    echo "--> done"
+}
 
-#TODO faire des diffs avec les fichiers de log déjà présents pour voir ce qui a changé et enregistrer seulement ces diffs dans les fichiers de log
+function randrom_ssh_port()
+{
+    # randomize port between 9000 and 50000
+    random_port=$((9000 + RANDOM % 50000))
+    sed -i 's/#Port/Port $random_port/g' /etc/ssh/sshd_config
+    # tell SELinux about port change
+    semanage -port -a -t ssh_port_t -p tcp $random_port
+    systemctl restart sshd
+    echo "--> done"
+    echo "New SSH Port: $random_port"
+}
 
-#TODO Installer ufw
-#TODO changer le port ssh
-#TODO vérifier que seul root puisse lancer le script
+
+function main()
+{
+    if [ "$(id -u)" != "0" ]; then
+        echo "This script must be run as root" 1>&2
+        exit 1
+    fi
+
+
+
+    if [[ $# = 0 ]]; then
+        # launching functions
+        installed
+        repo_list
+        update
+        disable_usb
+        restrict_root
+        password_policies
+        change_umask
+        change_pam
+        kick_off
+        restrict_cron_at
+        list_permissions
+        find_other_perm
+        check_selinux
+        random_ssh_port
+        exit 1
+    else
+        # handle command line args
+        key="$1"
+        if [[ $key = "-f" ]]; then
+            shift # pass argument 1
+            # for each argument
+            for arg in "$@"
+            do
+                case $arg in
+                    installed)
+                        installed
+                        ;;
+                    repo_list)
+                        repo_list
+                        ;;
+                    update)
+                        update
+                        ;;
+                    disable_usb)
+                        disable_usb
+                        ;;
+                    restrict_root)
+                        restrict_root
+                        ;;
+                    password_policies)
+                        password_policies
+                        ;;
+                    change_umask)
+                        change_umask
+                        ;;
+                    change_pam)
+                        change_pam
+                        ;;
+                    kick_off)
+                        kick_off
+                        ;;
+                    restrict_cron_at)
+                        restrict_cron_at
+                        ;;
+                    list_permissions)
+                        list_permissions
+                        ;;
+                    find_other_perm)
+                        find_other_perm
+                        ;;
+                    check_selinux)
+                        check_selinux
+                        ;;
+                    random_ssh_port)
+                        random_ssh_port
+                        ;;
+                    *)
+                        echo "unrecognized function: $arg"
+                esac
+            done
+        else
+            echo "error, unrecognized option: $key"
+        fi
+    fi
+}
+
+main
