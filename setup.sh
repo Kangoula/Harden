@@ -198,8 +198,6 @@ function main()
         exit 1
     fi
 
-
-
     if [[ $# = 0 ]]; then
         # launching functions
         installed
