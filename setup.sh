@@ -187,7 +187,7 @@ random_ssh_port()
 {
     # randomize port between 9000 and 50000
     random_port=$((9000 + RANDOM % 50000))
-    sed -i "s/^#?Port .*/Port $random_port/g" /etc/ssh/sshd_config
+    sed -ri "s/^#?Port.*/Port $random_port/g" /etc/ssh/sshd_config
     # tell SELinux about port change
     semanage -port -a -t ssh_port -p tcp $random_port
     systemctl restart sshd
