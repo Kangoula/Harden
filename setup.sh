@@ -56,7 +56,7 @@ restrict_root()
     echo "tty1" > /etc/securetty
     # disable ssh root login
     echo "Disable Root SSH Login"
-     's/#PermitRootLogin no/PermitRootLogin no/g' /etc/ssh/sshd_config
+    sed -i 's/#PermitRootLogin no/PermitRootLogin no/g' /etc/ssh/sshd_config
     # restrict /root directory to root user
     chmod 700 /root
     echo "--> done"
