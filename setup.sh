@@ -53,6 +53,7 @@ restrict_root()
 {
     echo "Restrict root"
     # can't login directly as root user, must use su or sudo now
+    echo "tty1" > /etc/securetty
     # disable ssh root login
     echo "Disable Root SSH Login"
      's/#PermitRootLogin no/PermitRootLogin no/g' /etc/ssh/sshd_config
