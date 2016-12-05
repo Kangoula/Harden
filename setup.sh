@@ -1,5 +1,10 @@
 #!/bin/bash
 
+#TODO Pam 'Module unkown'
+#TODO semanage not found
+#TODO find no such file
+#TODO ssh not changing port
+
 # simple function to display the date in a file
 display_date()
 {
@@ -11,7 +16,7 @@ display_date()
 # List all installed packages
 installed()
 {
-    echo " Installed packages"
+    echo "Installed packages"
     display_date /var/log/installed_packages.log
     yum list installed >> /var/log/installed_packages.log
     echo "--> done"
@@ -20,16 +25,16 @@ installed()
 
 repo_list()
 {
-    echo " Repositories List"
+    echo "Repositories List"
     display_date /var/log/repo_list.log
-    yum repolist >> /var/log/repo_list.org
+    yum repolist >> /var/log/repo_list.log
     echo "--> done"
 }
 
 # Update system
 update()
 {
-    echo " Updating system"
+    echo "Updating system"
     display_date /var/log/periodic_updates.log
     yum update -y >> /var/log/periodic_updates.log
     echo "--> done"
@@ -38,7 +43,7 @@ update()
 # Disable USB mass storage
 disable_usb()
 {
-    echo " Disabling usb"
+    echo "Disabling usb"
     echo "blacklist usb-storage" > /etc/modprobe.d/blacklist-usbstorage
     echo "--> done"
 }
@@ -106,7 +111,7 @@ password    required      pam_deny.so
 session     optional      pam_keyinit.so revoke
 session     required      pam_limits.so
 session     [success=1 default=ignore] pam_succeed_if.so service in crond quiet use_uid
-session     required      pam_unix.si' > /etc/pam.d/system-auth
+session     required      pam_unix.so' > /etc/pam.d/system-auth
     echo "--> done"
 }
 
@@ -181,7 +186,7 @@ random_ssh_port()
 {
     # randomize port between 9000 and 50000
     random_port=$((9000 + RANDOM % 50000))
-    sed -i 's/#Port/Port $random_port/g' /etc/ssh/sshd_config
+    sed -i "s/Port 22/Port $random_port/g" /etc/ssh/sshd_config
     # tell SELinux about port change
     semanage -port -a -t ssh_port_t -p tcp $random_port
     systemctl restart sshd
