@@ -1,7 +1,5 @@
 #!/bin/bash
 
-#TODO Pam 'Module unkown'
-#TODO semanage not found
 #TODO find no such file
 #TODO ssh not changing port
 
@@ -37,6 +35,8 @@ update()
     echo "Updating system"
     display_date /var/log/periodic_updates.log
     yum update -y >> /var/log/periodic_updates.log
+    echo "Install semanage"
+    yum -y install policycoreutils-python
     echo "--> done"
 }
 
@@ -187,9 +187,9 @@ random_ssh_port()
 {
     # randomize port between 9000 and 50000
     random_port=$((9000 + RANDOM % 50000))
-    sed -i "s/Port 22/Port $random_port/g" /etc/ssh/sshd_config
+    sed -i "s/^#?Port .*/Port $random_port/g" /etc/ssh/sshd_config
     # tell SELinux about port change
-    semanage -port -a -t ssh_port_t -p tcp $random_port
+    semanage -port -a -t ssh_port -p tcp $random_port
     systemctl restart sshd
     echo "--> done"
     echo "New SSH Port: $random_port"
