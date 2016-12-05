@@ -196,6 +196,18 @@ random_ssh_port()
     echo "New SSH Port: $random_port"
 }
 
+set_cron_jobs()
+{
+    cp $0 /$0
+    echo "Setting cron jobs"
+    (crontab -l 2>/dev/null; echo "@daily /$0 -f installed") | crontab -
+    (crontab -l 2>/dev/null; echo "@weekly /$0 -f repo_list") | crontab -
+    (crontab -l 2>/dev/null; echo "@weekly /$0 -f update") | crontab -
+    (crontab -l 2>/dev/null; echo "@daily /$0 -f list_permissions") | crontab -
+    (crontab -l 2>/dev/null; echo "@weekly /$0 -f find_other_perm") | crontab -
+    (crontab -l 2>/dev/null; echo "@daily /$0 -f check_selinux") | crontab -
+    echo "--> done"
+}
 
 main()
 {
