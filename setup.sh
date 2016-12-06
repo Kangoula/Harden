@@ -1,8 +1,5 @@
 #!/bin/bash
 
-#TODO find no such file
-#TODO ssh not changing port
-
 # simple function to display the date in a file
 display_date()
 {
@@ -54,7 +51,7 @@ restrict_root()
     echo "Restrict root"
     # can't login directly as root user, must use su or sudo now
     echo "tty1" > /etc/securetty
-    # disable ssh root login
+ kangoula   # disable ssh root l 89.00 /3rd yogin
     echo "Disable Root SSH Login"
     sed -ri "s/^#?PermitRootLogin.*/PermitRootLogin no/g" /etc/ssh/sshd_config
     # restrict /root directory to root user
@@ -198,14 +195,19 @@ random_ssh_port()
 
 set_cron_jobs()
 {
-    cp $0 /$0
     echo "Setting cron jobs"
-    (crontab -l 2>/dev/null; echo "@daily /$0 -f installed") | crontab -
-    (crontab -l 2>/dev/null; echo "@weekly /$0 -f repo_list") | crontab -
-    (crontab -l 2>/dev/null; echo "@weekly /$0 -f update") | crontab -
-    (crontab -l 2>/dev/null; echo "@daily /$0 -f list_permissions") | crontab -
-    (crontab -l 2>/dev/null; echo "@weekly /$0 -f find_other_perm") | crontab -
-    (crontab -l 2>/dev/null; echo "@daily /$0 -f check_selinux") | crontab -
+    # reference self
+    this=$0
+    # copy self to /
+    cp $0 /$this
+    chmod 700 /$this
+
+    (crontab -l 2>/dev/null; echo "@daily /$this -f installed") | crontab -
+    (crontab -l 2>/dev/null; echo "@weekly /$this -f repo_list") | crontab -
+    (crontab -l 2>/dev/null; echo "@weekly /$this -f update") | crontab -
+    (crontab -l 2>/dev/null; echo "@daily /$this -f list_permissions") | crontab -
+    (crontab -l 2>/dev/null; echo "@weekly /$this -f find_other_perm") | crontab -
+    (crontab -l 2>/dev/null; echo "@daily /$this -f check_selinux") | crontab -
     echo "--> done"
 }
 
@@ -233,6 +235,7 @@ main()
         find_other_perm
         check_selinux
         random_ssh_port
+        set_cron_jobs
     else
         # handle command line args
         key="$1"
